@@ -13,6 +13,9 @@ const messages = ref<Message[]>([])
 const isLoading = ref(false)
 
 const loadCurrentSession = () => {
+  // 清理旧版不分用户的 localStorage 残留
+  sessionManager.cleanupLegacyKeys()
+
   let session = sessionManager.getCurrentSession()
   if (!session) {
     const oldMessages = loadOldMessages()
@@ -37,14 +40,9 @@ const loadCurrentSession = () => {
 }
 
 const loadOldMessages = (): Message[] => {
-  try {
-    const saved = localStorage.getItem('chat_messages')
-    if (saved) {
-      const oldMsgs = JSON.parse(saved)
-      return oldMsgs.map((m: Message) => ({ ...m, isStreaming: false }))
-    }
-  } catch (e) {
-    console.error('加载历史消息失败:', e)
+  const legacy = sessionManager.getLegacyMessages()
+  if (legacy && legacy.length > 0) {
+    return legacy.map((m: Message) => ({ ...m, isStreaming: false }))
   }
   return []
 }
